@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゴリラ語翻訳システム</title>
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style id="theme-style">
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #181818;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #ffd700;
+            --accent-hover: #e6c200;
+            --btn-sec: #262626;
+            --btn-sec-hover: #333333;
+            --border: transparent;
+            --input-bg: #121212;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --body-border: none;
+            --body-shadow: none;
+            --body-bg-image: none;
+            --btn-border: none;
+            --btn-radius: 12px;
+            --card-radius: 16px;
+            --input-radius: 10px;
+            --action-radius: 50px;
+            --copy-radius: 8px;
+            --tab-radius: 8px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: var(--body-bg-image);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            max-width: 960px;
+            margin: 30px auto;
+            padding: 24px;
+            border-radius: var(--card-radius);
+            border: var(--body-border);
+            box-shadow: var(--body-shadow);
+            transition: all 0.3s ease;
+        }
+
+        /* レトロ時のみ表示する装飾エリア */
+        .retro-only {
+            display: none !important;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h1 .material-symbols-outlined {
+            color: var(--accent);
+        }
+
+        .material-symbols-outlined {
+            font-size: 20px;
+            vertical-align: middle;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .theme-switch-btn, .dictionary-btn, .bgm-btn {
+            background-color: var(--btn-sec);
+            color: var(--text-muted);
+            border: var(--btn-border);
+            padding: 9px 16px;
+            border-radius: var(--btn-radius);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--font-family);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .theme-switch-btn:hover, .dictionary-btn:hover, .bgm-btn:hover {
+            background-color: var(--btn-sec-hover);
+            color: var(--text-main);
+        }
+
+        .desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* 点滅アニメーション（レトロ用） */
+        @keyframes retroBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .blink-text {
+            animation: retroBlink 1s infinite;
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        /* 翻訳コンテナ */
+        .translator-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .translator-container {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+            }
+        }
+
+        .box {
+            background-color: var(--card-bg);
+            border: var(--btn-border);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 言語選択タブと操作エリアのコンテナ */
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .lang-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: var(--btn-border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--tab-radius);
+            font-family: var(--font-family);
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #0d0d0d;
+            background-color: var(--accent);
+        }
+
+        .btn-paste, .btn-top-copy {
+            background-color: var(--btn-sec);
+            color: var(--text-muted);
+            border: var(--btn-border);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--tab-radius);
+            font-family: var(--font-family);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-paste:hover, .btn-top-copy:hover {
+            background-color: var(--btn-sec-hover);
+            color: var(--text-main);
+        }
+
+        .btn-paste .material-symbols-outlined, .btn-top-copy .material-symbols-outlined {
+            font-size: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            border-radius: var(--input-radius);
+            border: var(--btn-border);
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            font-size: 15px;
+            font-family: var(--font-family);
+            box-sizing: border-box;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea::placeholder {
+            color: #525252;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-action {
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            border: var(--btn-border);
+            border-radius: var(--action-radius);
+            cursor: pointer;
+            font-family: var(--font-family);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-gorilla {
+            background-color: var(--accent);
+            color: #0d0d0d;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.25);
+        }
+
+        .btn-gorilla:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .ad-banner {
+            display: none;
+            background-color: var(--card-bg);
+            border: var(--btn-border);
+            text-align: center;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-radius: var(--btn-radius);
+        }
+
+        .ad-banner a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: var(--card-radius);
+            padding: 24px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.5);
+            border: var(--btn-border);
+            font-family: var(--font-family);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dict-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .dict-table th, .dict-table td {
+            border: var(--btn-border);
+            padding: 8px;
+            text-align: center;
+        }
+
+        .dict-table th {
+            background-color: var(--input-bg);
+            color: var(--accent);
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 24px;
+        }
+    </style>
+</head>
+<body id="appBody">
+
+    <!-- レトロ時限定：流れる文字列（Marquee） -->
+    <div class="retro-only" id="marqueeArea" style="margin-bottom: 12px; background: #000; color: #00ff00; padding: 4px; font-size: 12px; border: 2px inset #fff;">
+        <marquee scrollamount="4">
+            ★★★ ようこそゴリラ語翻訳の部屋へ！ 祝・開設！ 相互リンク随時募集中だウホ！ キリ番（777, 1000）踏んだ人は掲示板に報告みたいなことできないけどヨロシク！ ★★★
+        </marquee>
+    </div>
+
+    <div class="header-bar">
+        <h1 id="appTitle">
+            <span class="material-symbols-outlined" id="titleIcon">translate</span>
+            ゴリラ語翻訳
+        </h1>
+        <div class="header-actions">
+            <!-- レトロ時のみ表示されるBGM再生ボタン -->
+            <button class="bgm-btn retro-only" id="bgmBtn" onclick="toggleBGM()">
+                <span>BGM再生 [OFF]</span>
+            </button>
+            <button class="dictionary-btn" id="dictBtn" onclick="openModal()">
+                <span class="material-symbols-outlined" id="dictIcon">menu_book</span>
+                <span>対応表</span>
+            </button>
+            <button class="theme-switch-btn" id="themeBtn" onclick="toggleTheme()">
+                <span class="material-symbols-outlined" id="themeIcon">palette</span>
+                <span>レトロ表示切替</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- レトロ時限定：アクセスカウンター＆点滅バナー -->
+    <div class="retro-only" id="counterArea" style="text-align: center; margin-bottom: 16px; font-size: 13px;">
+        <span class="blink-text">【MUST SEE!】</span>
+        あなたは 
+        <span style="background: #000; color: #00ff00; font-family: monospace; padding: 2px 8px; border: 2px inset #808080; font-weight: bold; font-size: 15px;">00055</span> 
+        人目のゴリラかもしれません
+    </div>
+
+    <div class="ad-banner" id="adTop">
+        [テキトー] <a href="#" onclick="clickAd(event)">最高級バナナ定期便はどちら！？初回50%OFFキャンペーン実施してほしい</a>
+    </div>
+
+    <div class="desc" id="descText">
+        左右のタブで言語を選択し、テキストを入力して「翻訳する」ボタンを押してください。<br>
+        ひらがななら日本語、アルファベットなら英語として正確に双方向翻訳されます。
+    </div>
+
+    <div class="translator-container">
+        <!-- 左：入力エリア -->
+        <div class="box">
+            <div class="box-header">
+                <div class="lang-tabs" id="inputTabs">
+                    <button class="tab-btn active" id="inTabHuman" onclick="setInputLang('human', this)">人間語 (日本語 / 英語)</button>
+                    <button class="tab-btn" id="inTabGorilla" onclick="setInputLang('gorilla', this)">ゴリラ語</button>
+                </div>
+                <button class="btn-paste" id="btnPaste" onclick="pasteText()">
+                    <span class="material-symbols-outlined" id="pasteIcon">content_paste</span>
+                    <span id="pasteText">貼り付け</span>
+                </button>
+            </div>
+            <textarea id="inputText" placeholder="ここに翻訳したいテキストを入力..."></textarea>
+        </div>
+
+        <!-- 中央：翻訳ボタン -->
+        <div class="buttons">
+            <button class="btn-action btn-gorilla" id="mainTranslateBtn" onclick="executeTranslate()">
+                <span class="material-symbols-outlined" id="translateIcon">swap_horiz</span>
+                <span>翻訳する</span>
+            </button>
+        </div>
+
+        <!-- 右：出力エリア -->
+        <div class="box">
+            <div class="box-header">
+                <div class="lang-tabs" id="outputTabs">
+                    <button class="tab-btn" id="outTabHuman" onclick="setOutputLang('human', this)">人間語 (日本語 / 英語)</button>
+                    <button class="tab-btn active" id="outTabGorilla" onclick="setOutputLang('gorilla', this)">ゴリラ語</button>
+                </div>
+                <button class="btn-top-copy" id="btnTopCopy" onclick="copyResult()">
+                    <span class="material-symbols-outlined" id="copyIcon">content_copy</span>
+                    <span id="copyText">コピー</span>
+                </button>
+            </div>
+            <textarea id="outputText" readonly placeholder="ここに翻訳結果が表示されます..."></textarea>
+        </div>
+    </div>
+
+    <div class="ad-banner" id="adBottom">
+        [妄想] <a href="#" onclick="clickAd(event)">ジャングルでもつながる！格安SIM「ウホホモバイル」とかあったらいいよね</a>
+    </div>
+
+    <!-- レトロ時限定：工事中＆リンク集 -->
+    <div class="retro-only" id="underConstArea" style="text-align: center; margin-top: 16px; font-size: 12px; color: #ff0;">
+        <p>🚧 イラストコーナー・BBS掲示板はありません 🚧</p>
+        <p><a href="#" onclick="alert('掲示板はない！(準備予定なし)'); return false;" style="color: #00ffff;">[ ゲストブックに足跡を残したい ]</a> | <a href="#" onclick="alert('WebRingは終了しました'); return false;" style="color: #00ffff;">[ ジャングルWebRing ]</a></p>
+    </div>
+
+    <div class="footer" id="footerText">
+        © Gorilla Translation System. All Rights Reserved.
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal(event)">
+                <span class="material-symbols-outlined" id="closeIcon">close</span>
+            </button>
+            <h2 id="modalTitle" style="margin-top: 0; color: var(--accent); font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" id="modalTitleIcon">menu_book</span>
+                <span>ゴリラ語 ⇄ 人間語 対応表</span>
+            </h2>
+            <p id="modalDesc" style="font-size: 12px; color: var(--text-muted);">アルファベットおよびひらがな（捨て仮名・濁音対応）のゴリラ語コード表です。</p>
+            
+            <table class="dict-table">
+                <thead>
+                    <tr>
+                        <th id="th1">区分</th>
+                        <th id="th2">人間語 (アルファベット/ひらがな)</th>
+                        <th id="th3">ゴリラ語コード</th>
+                    </tr>
+                </thead>
+                <tbody id="dictTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let isRetro = false;
+        let inputLang = 'human';
+        let outputLang = 'gorilla';
+        let audioCtx = null;
+        let isBgmPlaying = false;
+        let bgmInterval = null;
+
+        function setInputLang(lang, btn) {
+            inputLang = lang;
+            const parent = document.getElementById('inputTabs');
+            parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (inputLang === 'human') {
+                setOutputLang('gorilla', document.getElementById('outTabGorilla'));
+            } else {
+                setOutputLang('human', document.getElementById('outTabHuman'));
+            }
+        }
+
+        function setOutputLang(lang, btn) {
+            outputLang = lang;
+            const parent = document.getElementById('outputTabs');
+            parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function executeTranslate() {
+            if (inputLang === 'human' && outputLang === 'gorilla') {
+                translateToGorilla();
+            } else if (inputLang === 'gorilla' && outputLang === 'human') {
+                translateToHuman();
+            } else {
+                document.getElementById("outputText").value = document.getElementById("inputText").value;
+            }
+        }
+
+        function pasteText() {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById("inputText").value = text;
+                const btnPaste = document.getElementById("btnPaste");
+                if (isRetro) {
+                    const orig = btnPaste.innerText;
+                    btnPaste.innerText = "[ 貼付OK！ ]";
+                    setTimeout(() => btnPaste.innerText = orig, 1500);
+                } else {
+                    const origHtml = btnPaste.innerHTML;
+                    btnPaste.innerHTML = '<span class="material-symbols-outlined">check</span><span>貼り付け完了</span>';
+                    setTimeout(() => btnPaste.innerHTML = origHtml, 1500);
+                }
+            }).catch(err => {
+                alert("クリップボードからの読み取りに失敗しました。ブラウザの権限をご確認ください。");
+            });
+        }
+
+        function copyResult() {
+            const outputText = document.getElementById("outputText");
+            if (!outputText.value) return;
+
+            navigator.clipboard.writeText(outputText.value).then(() => {
+                const btnTopCopy = document.getElementById("btnTopCopy");
+                
+                if (isRetro) {
+                    const originalText = btnTopCopy.innerText;
+                    btnTopCopy.innerText = "[ コピー完了！ ]";
+                    setTimeout(() => {
+                        btnTopCopy.innerText = originalText;
+                    }, 1500);
+                } else {
+                    const originalHTML = btnTopCopy.innerHTML;
+                    btnTopCopy.innerHTML = '<span class="material-symbols-outlined">check</span><span>コピー完了</span>';
+                    setTimeout(() => {
+                        btnTopCopy.innerHTML = originalHTML;
+                    }, 1500);
+                }
+            }).catch(err => {
+                alert("コピーに失敗しました");
+            });
+        }
+
+        function toggleTheme() {
+            isRetro = !isRetro;
+            const body = document.getElementById("appBody");
+            const themeBtn = document.getElementById("themeBtn");
+            const r = document.documentElement;
+
+            const appTitle = document.getElementById("appTitle");
+            const dictBtn = document.getElementById("dictBtn");
+            const descText = document.getElementById("descText");
+            const inTabHuman = document.getElementById("inTabHuman");
+            const inTabGorilla = document.getElementById("inTabGorilla");
+            const outTabHuman = document.getElementById("outTabHuman");
+            const outTabGorilla = document.getElementById("outTabGorilla");
+            const btnPaste = document.getElementById("btnPaste");
+            const btnTopCopy = document.getElementById("btnTopCopy");
+            const mainTranslateBtn = document.getElementById("mainTranslateBtn");
+            const adTop = document.getElementById("adTop");
+            const adBottom = document.getElementById("adBottom");
+            const footerText = document.getElementById("footerText");
+            const modalTitle = document.getElementById("modalTitle");
+            const modalDesc = document.getElementById("modalDesc");
+            const th1 = document.getElementById("th1");
+            const th2 = document.getElementById("th2");
+            const th3 = document.getElementById("th3");
+
+            const retroElements = document.querySelectorAll(".retro-only");
+
+            if (isRetro) {
+                // レトロ表示
+                retroElements.forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
+                document.getElementById("marqueeArea").style.setProperty('display', 'block', 'important');
+                document.getElementById("counterArea").style.setProperty('display', 'block', 'important');
+                document.getElementById("underConstArea").style.setProperty('display', 'block', 'important');
+
+                adTop.style.display = "block";
+                adBottom.style.display = "block";
+
+                body.style.backgroundColor = "#5a3d12";
+                body.style.backgroundImage = `
+                    linear-gradient(45deg, #422a08 25%, transparent 25%), 
+                    linear-gradient(-45deg, #422a08 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #422a08 75%), 
+                    linear-gradient(-45deg, transparent 75%, #422a08 75%)
+                `;
+                body.style.backgroundSize = "40px 40px";
+                body.style.backgroundPosition = "0 0, 0 20px, 20px -20px, -20px 0px";
+                body.style.color = "#ffff00";
+                body.style.fontFamily = '"MS PGothic", "ＭＳ Ｐゴシック", monospace';
+                body.style.border = "5px ridge #00ff00";
+                body.style.boxShadow = "none";
+
+                r.style.setProperty('--card-bg', '#3d2509');
+                r.style.setProperty('--text-main', '#ffff00');
+                r.style.setProperty('--text-muted', '#ffcc99');
+                r.style.setProperty('--accent', '#00ff00');
+                r.style.setProperty('--btn-sec', '#c0c0c0');
+                r.style.setProperty('--btn-sec-hover', '#e0e0e0');
+                r.style.setProperty('--border', '#000000');
+                r.style.setProperty('--input-bg', '#ffffff');
+                r.style.setProperty('--font-family', '"MS PGothic", "ＭＳ Ｐゴシック", monospace');
+                r.style.setProperty('--btn-border', '3px outset #ffffff');
+
+                // 角丸全撤廃 (0px)
+                r.style.setProperty('--btn-radius', '0px');
+                r.style.setProperty('--card-radius', '0px');
+                r.style.setProperty('--input-radius', '0px');
+                r.style.setProperty('--action-radius', '0px');
+                r.style.setProperty('--copy-radius', '0px');
+                r.style.setProperty('--tab-radius', '0px');
+
+                themeBtn.innerHTML = '[切替] モダン表示';
+
+                appTitle.innerHTML = "[/o\\ ] ゴリラ語翻訳 (-^^-)";
+                dictBtn.innerHTML = "[対応表]";
+                descText.innerHTML = "=== ご案内 ===<br>タブで言語を選択して「翻訳実行」を押すんだウホ！(^_^)/";
+                
+                inTabHuman.innerHTML = "[ 人間語 ]";
+                inTabGorilla.innerHTML = "[ ゴリラ語 ]";
+                outTabHuman.innerHTML = "[ 人間語 ]";
+                outTabGorilla.innerHTML = "[ ゴリラ語 ]";
+                btnPaste.innerHTML = "[ 貼り付け ]";
+                btnTopCopy.innerHTML = "[ コピー ]";
+
+                mainTranslateBtn.innerHTML = "【 翻訳実行 [ウホ] 】";
+
+                adTop.innerHTML = "[PR] (==) 黄金のバナナ通信販売はこちら！大好評発売中 ";
+                adBottom.innerHTML = "[PR] (o.o) 電波の届かないジャングルでも安心！ウホホPHS";
+                footerText.innerHTML = "Copyright (C) 2026 GORILLA TRANSLATOR. All Rights Reserved. m(_ _)m";
+                modalTitle.innerHTML = "[/o\\ ] ゴリラ語 ⇄ 人間語 対応表";
+                modalDesc.innerHTML = "アルファベットおよびひらがなのゴリラ語コード表です。";
+                th1.innerHTML = "分類";
+                th2.innerHTML = "文字";
+                th3.innerHTML = "ゴリラ語";
+
+            } else {
+                // モダン表示
+                retroElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
+                stopBGM();
+
+                adTop.style.display = "none";
+                adBottom.style.display = "none";
+
+                body.style.backgroundColor = "#0d0d0d";
+                body.style.backgroundImage = "none";
+                body.style.color = "#f3f4f6";
+                body.style.fontFamily = "-apple-system, BlinkMacSystemFont, sans-serif";
+                body.style.border = "none";
+                body.style.boxShadow = "none";
+
+                r.style.setProperty('--card-bg', '#181818');
+                r.style.setProperty('--text-main', '#f3f4f6');
+                r.style.setProperty('--text-muted', '#9ca3af');
+                r.style.setProperty('--accent', '#ffd700');
+                r.style.setProperty('--btn-sec', '#262626');
+                r.style.setProperty('--btn-sec-hover', '#333333');
+                r.style.setProperty('--border', 'transparent');
+                r.style.setProperty('--input-bg', '#121212');
+                r.style.setProperty('--font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+                r.style.setProperty('--btn-border', 'none');
+
+                // 角丸復元
+                r.style.setProperty('--btn-radius', '12px');
+                r.style.setProperty('--card-radius', '16px');
+                r.style.setProperty('--input-radius', '10px');
+                r.style.setProperty('--action-radius', '50px');
+                r.style.setProperty('--copy-radius', '8px');
+                r.style.setProperty('--tab-radius', '8px');
+
+                themeBtn.innerHTML = '<span class="material-symbols-outlined">palette</span><span>レトロ表示切替</span>';
+
+                appTitle.innerHTML = '<span class="material-symbols-outlined">translate</span> ゴリラ語翻訳';
+                dictBtn.innerHTML = '<span class="material-symbols-outlined">menu_book</span><span>対応表</span>';
+                descText.innerHTML = "左右のタブで言語を選択し、テキストを入力して翻訳ボタンを押してください。<br>ひらがななら日本語、アルファベットなら英語として正確に双方向翻訳されます。";
+                
+                inTabHuman.innerHTML = "人間語 (日本語 / 英語)";
+                inTabGorilla.innerHTML = "ゴリラ語";
+                outTabHuman.innerHTML = "人間語 (日本語 / 英語)";
+                outTabGorilla.innerHTML = "ゴリラ語";
+                btnPaste.innerHTML = '<span class="material-symbols-outlined">content_paste</span><span>貼り付け</span>';
+                btnTopCopy.innerHTML = '<span class="material-symbols-outlined">content_copy</span><span>コピー</span>';
+
+                mainTranslateBtn.innerHTML = '<span class="material-symbols-outlined">swap_horiz</span><span>翻訳する</span>';
+
+                footerText.innerHTML = "© Gorilla Translation System. All Rights Reserved.";
+                modalTitle.innerHTML = '<span class="material-symbols-outlined">menu_book</span><span>ゴリラ語 ⇄ 人間語 対応表</span>';
+                modalDesc.innerHTML = "アルファベットおよびひらがな（捨て仮名・濁音対応）のゴリラ語コード表です。";
+                th1.innerHTML = "区分";
+                th2.innerHTML = "人間語 (アルファベット/ひらがな)";
+                th3.innerHTML = "ゴリラ語コード";
+            }
+        }
+
+        /* レトロ表示専用 擬似MIDI（8bitピコピコ音）BGM再生機能 */
+        function toggleBGM() {
+            if (isBgmPlaying) {
+                stopBGM();
+            } else {
+                startBGM();
+            }
+        }
+
+        function startBGM() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            isBgmPlaying = true;
+            document.getElementById("bgmBtn").innerText = "BGM再生 [ON♪]";
+
+            const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+            let step = 0;
+
+            bgmInterval = setInterval(() => {
+                if (!isBgmPlaying) return;
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = "square";
+                osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+                step++;
+            }, 200);
+        }
+
+        function stopBGM() {
+            isBgmPlaying = false;
+            if (bgmInterval) clearInterval(bgmInterval);
+            const bgmBtn = document.getElementById("bgmBtn");
+            if (bgmBtn) bgmBtn.innerText = "BGM再生 [OFF]";
+        }
+
+        function clickAd(e) {
+            e.preventDefault();
+            alert(isRetro ? "嘘広告クリックありがとうございます (^^) ウホッ！" : "嘘広告クリックありがとうございます！");
+        }
+
+        const charToGorilla = {
+            "A": "ウ", "I": "ホ", "U": "ホー", "E": "ウホ", "O": "ホホ",
+            "XA": "ウッ", "XI": "ホッ", "XU": "ホーッ", "XE": "ウホッ", "XO": "ホホッ",
+            "XYA": "ウゥ", "XYU": "ウゥホ", "XYO": "ウゥホー",
+            "XTU": "ウゥッ",
+            "B": "ホゥ", "C": "ホゥホ", "D": "ホゥホー", "F": "ウー", "G": "ウーウ",
+            "H": "ウーホ", "J": "ウーホー", "K": "ホッウ", "L": "ホッホ", "M": "ホッホー",
+            "N": "ホーウ", "P": "ホーホ", "Q": "ホーホー", "R": "ウッホ", "S": "ウホッホ",
+            "T": "ホホッホ", "V": "ホゥッ", "W": "ホホホー", "Y": "ウッホー", "Z": "ホッホーウ",
+            "ー": "ホォ"
+        };
+
+        const gorillaToChar = {};
+        for (const [ch, go] of Object.entries(charToGorilla)) {
+            gorillaToChar[go] = ch;
+        }
+
+        const kanaToRomaji = {
+            "あ": "A", "い": "I", "う": "U", "え": "E", "お": "O",
+            "ぁ": "XA", "ぃ": "XI", "ぅ": "XU", "ぇ": "XE", "ぉ": "XO",
+            "か": "KA", "き": "KI", "く": "KU", "け": "KE", "こ": "KO",
+            "が": "GA", "ぎ": "GI", "ぐ": "GU", "げ": "GE", "ご": "GO",
+            "さ": "SA", "し": "SI", "す": "SU", "せ": "SE", "そ": "SO",
+            "ざ": "ZA", "じ": "JI", "ず": "ZU", "ぜ": "ZE", "ぞ": "ZO",
+            "た": "TA", "ち": "TI", "つ": "TU", "て": "TE", "と": "TO",
+            "だ": "DA", "ぢ": "DI", "づ": "DU", "で": "DE", "ど": "DO",
+            "な": "NA", "に": "NI", "ぬ": "NU", "ね": "NE", "の": "NO",
+            "は": "HA", "ひ": "HI", "ふ": "HU", "へ": "HE", "ほ": "HO",
+            "ば": "BA", "び": "BI", "ぶ": "BU", "べ": "BE", "ぼ": "BO",
+            "ぱ": "PA", "ぴ": "PI", "ぷ": "PU", "ぺ": "PE", "ぽ": "PO",
+            "ま": "MA", "み": "MI", "む": "MU", "め": "ME", "も": "MO",
+            "や": "YA", "ゆ": "YU", "よ": "YO",
+            "ゃ": "XYA", "ゅ": "XYU", "ょ": "XYO",
+            "ら": "RA", "り": "RI", "る": "RU", "れ": "RE", "ろ": "RO",
+            "わ": "WA", "を": "WO", "ん": "N", "ー": "ー",
+            "っ": "XTU"
+        };
+
+        const romajiToKana = {
+            "KYA": "きゃ", "KYU": "きゅ", "KYO": "きょ",
+            "GYA": "ぎゃ", "GYU": "ぎゅ", "GYO": "ぎょ",
+            "SHA": "しゃ", "SHU": "しゅ", "SHO": "しょ",
+            "JYA": "じゃ", "JYU": "じゅ", "JYO": "じょ", "JA": "じゃ", "JU": "じゅ", "JO": "じょ",
+            "CHA": "ちゃ", "CHU": "ちゅ", "CHO": "ちょ",
+            "NYA": "にゃ", "NYU": "にゅ", "NYO": "にょ",
+            "HYA": "ひゃ", "HYU": "ひゅ", "HYO": "ひょ",
+            "BYA": "びゃ", "BYU": "びゅ", "BYO": "びょ",
+            "PYA": "ぴゃ", "PYU": "ぴゅ", "PYO": "ぴょ",
+            "MYA": "みゃ", "MYU": "みゅ", "MYO": "みょ",
+            "RYA": "りゃ", "RYU": "りゅ", "RYO": "りょ",
+            "FA": "ふぁ", "FI": "ふぃ", "FE": "ふぇ", "FO": "ふぉ",
+            "THI": "てぃ", "THU": "とぅ", "DHI": "でぃ", "DHU": "どぅ",
+            "WI": "うぃ", "WE": "うぇ",
+            "KA": "か", "KI": "き", "KU": "く", "KE": "け", "KO": "こ",
+            "GA": "が", "GI": "ぎ", "GU": "ぐ", "GE": "げ", "GO": "ご",
+            "SA": "さ", "SI": "し", "SU": "す", "SE": "せ", "そ": "SO",
+            "ZA": "ざ", "JI": "じ", "ZU": "ず", "ZE": "ぜ", "ZO": "ぞ",
+            "TA": "た", "TI": "ち", "TU": "つ", "TE": "て", "TO": "と",
+            "DA": "だ", "DI": "ぢ", "DU": "づ", "DE": "で", "DO": "ど",
+            "NA": "な", "NI": "に", "NU": "ぬ", "NE": "ね", "NO": "の",
+            "HA": "は", "HI": "ひ", "HU": "ふ", "HE": "へ", "HO": "ほ",
+            "BA": "ば", "BI": "び", "BU": "ぶ", "BE": "べ", "BO": "ぼ",
+            "PA": "ぱ", "PI": "ぴ", "PU": "ぷ", "PE": "ぺ", "PO": "ぽ",
+            "MA": "ま", "MI": "み", "MU": "む", "ME": "め", "MO": "も",
+            "YA": "や", "YU": "ゆ", "YO": "よ",
+            "RA": "ら", "RI": "り", "RU": "る", "RE": "れ", "RO": "ろ",
+            "WA": "わ", "WO": "を", "N": "ん", "ー": "ー",
+            "A": "あ", "I": "い", "U": "う", "E": "え", "O": "お",
+            "XA": "ぁ", "XI": "ぃ", "XU": "ぅ", "XE": "ぇ", "XO": "ぉ",
+            "XYA": "ゃ", "XYU": "ゅ", "XYO": "ょ", "XTU": "っ"
+        };
+
+        function openModal() {
+            const tbody = document.getElementById("dictTableBody");
+            if (tbody.children.length === 0) {
+                tbody.innerHTML += `<tr><td>制御タグ</td><td>日本語モード / 英語モード</td><td><code>ウホホー</code> / <code>ホーホホ</code></td></tr>`;
+                for (const [code, gorilla] of Object.entries(charToGorilla)) {
+                    let kana = romajiToKana[code] || "-";
+                    tbody.innerHTML += `<tr><td>文字</td><td>${code} (${kana})</td><td><code>${gorilla}</code></td></tr>`;
+                }
+            }
+            document.getElementById("modalOverlay").style.display = "flex";
+        }
+
+        function closeModal(e) {
+            document.getElementById("modalOverlay").style.display = "none";
+        }
+
+        function convertKanaToRomajiString(kanaStr) {
+            let result = "";
+            let i = 0;
+            while (i < kanaStr.length) {
+                if (i + 2 < kanaStr.length) {
+                    let sub3 = kanaStr.substring(i, i + 3);
+                    if (sub3 === "てぃ") { result += "THI"; i += 3; continue; }
+                    if (sub3 === "とぅ") { result += "THU"; i += 3; continue; }
+                    if (sub3 === "でぃ") { result += "DHI"; i += 3; continue; }
+                    if (sub3 === "どぅ") { result += "DHU"; i += 3; continue; }
+                }
+
+                if (i + 1 < kanaStr.length) {
+                    let sub2 = kanaStr.substring(i, i + 2);
+                    let m = "";
+                    if (sub2 === "きゃ") m = "KYA";
+                    else if (sub2 === "きゅ") m = "KYU";
+                    else if (sub2 === "きょ") m = "KYO";
+                    else if (sub2 === "ぎゃ") m = "GYA";
+                    else if (sub2 === "ぎゅ") m = "GYU";
+                    else if (sub2 === "ぎょ") m = "GYO";
+                    else if (sub2 === "しゃ") m = "SHA";
+                    else if (sub2 === "しゅ") m = "SHU";
+                    else if (sub2 === "しょ") m = "SHO";
+                    else if (sub2 === "じゃ") m = "JYA";
+                    else if (sub2 === "じゅ") m = "JYU";
+                    else if (sub2 === "じょ") m = "JYO";
+                    else if (sub2 === "ちゃ") m = "CHA";
+                    else if (sub2 === "ちゅ") m = "CHU";
+                    else if (sub2 === "ちょ") m = "CHO";
+                    else if (sub2 === "にゃ") m = "NYA";
+                    else if (sub2 === "にゅ") m = "NYU";
+                    else if (sub2 === "にょ") m = "NYO";
+                    else if (sub2 === "ひゃ") m = "HYA";
+                    else if (sub2 === "ひゅ") m = "HYU";
+                    else if (sub2 === "ひょ") m = "HYO";
+                    else if (sub2 === "びゃ") m = "BYA";
+                    else if (sub2 === "びゅ") m = "BYU";
+                    else if (sub2 === "びょ") m = "BYO";
+                    else if (sub2 === "ぴゃ") m = "PYA";
+                    else if (sub2 === "ぴゅ") m = "PYU";
+                    else if (sub2 === "ぴょ") m = "PYO";
+                    else if (sub2 === "みゃ") m = "MYA";
+                    else if (sub2 === "みゅ") m = "MYU";
+                    else if (sub2 === "みょ") m = "MYO";
+                    else if (sub2 === "りゃ") m = "RYA";
+                    else if (sub2 === "りゅ") m = "RYU";
+                    else if (sub2 === "りょ") m = "RYO";
+                    else if (sub2 === "ふぁ") m = "FA";
+                    else if (sub2 === "ふぃ") m = "FI";
+                    else if (sub2 === "ふぇ") m = "FE";
+                    else if (sub2 === "ふぉ") m = "FO";
+                    else if (sub2 === "うぃ") m = "WI";
+                    else if (sub2 === "うぇ") m = "WE";
+
+                    if (m) {
+                        result += m;
+                        i += 2;
+                        continue;
+                    }
+                }
+
+                let char = kanaStr[i];
+                if (kanaToRomaji[char]) {
+                    result += kanaToRomaji[char];
+                } else {
+                    result += char;
+                }
+                i++;
+            }
+            return result;
+        }
+
+        function convertRomajiToKanaString(romajiStr) {
+            let result = "";
+            let i = 0;
+            const upper = romajiStr.toUpperCase();
+            while (i < upper.length) {
+                let matched = false;
+                for (let len = Math.min(4, upper.length - i); len >= 1; len--) {
+                    let sub = upper.substring(i, i + len);
+                    if (romajiToKana[sub]) {
+                        result += romajiToKana[sub];
+                        i += len;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    result += upper[i];
+                    i++;
+                }
+            }
+            return result;
+        }
+
+        function translateToGorilla() {
+            let input = document.getElementById("inputText").value.trim();
+            if (!input) return;
+
+            const hasHiragana = /[\u3040-\u309F]/.test(input);
+            let targetText = hasHiragana ? convertKanaToRomajiString(input) : input.toUpperCase();
+            let tag = hasHiragana ? "ウホホー" : "ホーホホ";
+
+            let resultTokens = [tag];
+            let i = 0;
+            while (i < targetText.length) {
+                let matched = false;
+                for (let len = Math.min(4, targetText.length - i); len >= 1; len--) {
+                    let sub = targetText.substring(i, i + len);
+                    if (charToGorilla[sub]) {
+                        resultTokens.push(charToGorilla[sub]);
+                        i += len;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    resultTokens.push(targetText[i]);
+                    i++;
+                }
+            }
+
+            document.getElementById("outputText").value = resultTokens.join(" ");
+        }
+
+        function translateToHuman() {
+            const input = document.getElementById("inputText").value.trim();
+            const tokens = input.split(/\s+/);
+            let rawCodes = "";
+            let mode = "EN";
+
+            for (const token of tokens) {
+                if (token === "ウホホー") {
+                    mode = "JP";
+                    continue;
+                }
+                if (token === "ホーホホ") {
+                    mode = "EN";
+                    continue;
+                }
+
+                if (gorillaToChar[token]) {
+                    rawCodes += gorillaToChar[token];
+                } else {
+                    rawCodes += token;
+                }
+            }
+
+            let finalResult = "";
+            if (mode === "JP") {
+                finalResult = convertRomajiToKanaString(rawCodes);
+            } else {
+                finalResult = rawCodes;
+            }
+
+            document.getElementById("outputText").value = finalResult;
+        }
+    </script>
+
+</body>
+</html>
